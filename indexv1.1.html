@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>حسابدار من</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f1ec;--card:#fff;--tx:#1b1b19;--mut:#7a7871;--line:#e3e1d9;--acc:#0f766e;--red:#c0392b;--grn:#15803d;--amb:#b45309;--onacc:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#121211;--card:#1d1c1a;--tx:#f0eee8;--mut:#9c9a92;--line:#32312e;--acc:#2dd4bf;--red:#f87171;--grn:#4ade80;--amb:#fbbf24;--onacc:#0b1f1c;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.65 Vazirmatn,Tahoma,system-ui,sans-serif;padding-bottom:96px}
+main{max-width:560px;margin:auto;padding:14px}
+h2{font-size:16px;margin:20px 2px 10px;font-weight:800}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid .card{margin:0}
+.big{font-size:20px;font-weight:800}.mut{color:var(--mut);font-size:13.5px}
+.red{color:var(--red)}.grn{color:var(--grn)}.amb{color:var(--amb)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ic{width:42px;height:42px;border-radius:12px;background:var(--bg);display:grid;place-items:center;font-size:22px;flex:none}
+.l{display:flex;align-items:center;gap:10px;min-width:0}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:9px 2px;font:inherit;font-size:12px}
+nav button b{display:block;font-size:20px;line-height:1.2}nav button.on{color:var(--acc);font-weight:800}
+button{font:inherit}
+button.p{background:var(--acc);color:var(--onacc);border:0;border-radius:12px;padding:11px 16px;font-weight:600}
+button.g{background:none;border:1px solid var(--line);color:var(--tx);border-radius:12px;padding:8px 12px}
+button.x{background:none;border:0;color:var(--mut);font-size:20px;padding:4px 8px}
+input,select,textarea{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;margin:3px 0 8px}
+input[type=checkbox]{width:auto;margin:0 0 0 8px;transform:scale(1.2)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 10px}
+.chip{border:1px solid var(--line);border-radius:12px;padding:6px 12px;background:var(--bg);font-size:14.5px}
+.chip.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+#sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;overflow:auto}
+#sheet>div{background:var(--bg);max-width:560px;margin:24px auto 70px;border-radius:18px;padding:14px}
+.fab{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:18px;font-size:30px;z-index:10;box-shadow:0 4px 14px rgba(0,0,0,.3);padding:0}
+.bar{height:8px;background:var(--bg);border-radius:6px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--acc);border-radius:6px}
+.seg{display:flex;gap:6px;margin-bottom:10px}.seg .chip{flex:1;text-align:center}
+.leg{display:flex;align-items:center;gap:8px;font-size:14px;margin:3px 0}.leg i{width:11px;height:11px;border-radius:4px;flex:none}
+.sw{display:flex;align-items:center;margin:6px 0 10px}
+.ig{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:auto;margin-bottom:8px}.ig span{width:40px;height:40px;border-radius:10px;background:var(--bg);display:grid;place-items:center;font-size:21px;border:1px solid var(--line)}.ig span.on{border-color:var(--acc);background:var(--card)}
+svg text{font-family:Vazirmatn,Tahoma,sans-serif;fill:var(--mut)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<button class="p fab" onclick="openAdd()">+</button>
+<div id="sheet"><div id="sheetIn"></div></div>
+<nav id="nav"></nav>
+<script>
+const MN=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const TYPES={exp:'خرج',inc:'درآمد',lend:'طلب (قرض دادم)',borrow:'بدهی (قرض گرفتم)'};
+const ICONS='💵 🏠 🏋️ 🚗 🚌 ⛽ 🍔 🍕 ☕ 🛒 👕 💊 🏥 📚 🎓 📱 💻 🎮 🎬 ✈️ 🏨 🎁 💡 💧 🔥 📶 🧾 💳 🏦 💰 📈 🐾 🧴 💇 🔧 🧹 👶 🎂 🍎 🥩 🛍️ ⚽ 🎵 🚕 🏖️ 🧳 🪙 🤝 🔄 🎯'.split(' ');
+const PAL=['#0f766e','#d97706','#7c3aed','#db2777','#2563eb','#65a30d','#dc2626','#0891b2'];
+const KEY='hesab_v1';
+let S={cats:[{id:'c1',name:'خوراک',type:'exp',icon:'🍔'},{id:'c2',name:'حمل‌ونقل',type:'exp',icon:'🚗'},{id:'c3',name:'قبوض',type:'exp',icon:'💡'},{id:'c4',name:'خرید',type:'exp',icon:'🛒'},{id:'c5',name:'قسط',type:'exp',icon:'🧾'},{id:'c6',name:'حقوق',type:'inc',icon:'💵'},{id:'c7',name:'قرض دادم',type:'lend',icon:'🤝'},{id:'c8',name:'قرض گرفتم',type:'borrow',icon:'🔄'}],cards:[{id:'k1',name:'کارت اصلی',acct:''}],tx:[],loans:[],inst:[],unit:'ریال'};
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+S.cats.forEach(c=>{if(!c.icon)c.icon=c.type==='exp'?'🛒':c.type==='inc'?'💵':'🤝'});
+if(!S.cards||!S.cards.length)S.cards=[{id:'k1',name:'کارت اصلی',acct:''}];
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const U=()=>S.unit==='تومان'?10:1;
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const money=r=>fmt(r/U())+' '+S.unit;
+const norm=s=>String(s).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/[٬،]/g,',').replace(/٫/g,'.');
+const num=s=>+norm(s).replace(/,/g,'')||0;
+function today(){const p=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date()),g=t=>+p.find(x=>x.type===t).value;return{y:g('year'),m:g('month'),d:g('day')}}
+const key=(y,m,d)=>y*10000+m*100+d;
+const Y=k=>Math.floor(k/10000),M=k=>Math.floor(k/100)%100,D=k=>k%100;
+const dstr=k=>`${D(k)} ${MN[M(k)-1]} ${Y(k)}`;
+const fdate=k=>`${Y(k)}/${String(M(k)).padStart(2,'0')}/${String(D(k)).padStart(2,'0')}`;
+function pdate(s){const m=norm(s).match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);return m?key(+m[1],+m[2],+m[3]):null}
+const tdKey=()=>{const T=today();return key(T.y,T.m,T.d)};
+const dim=m=>m<=6?31:m<=11?30:29;
+function addM(k,n){let y=Y(k),m=M(k)+n;while(m>12){m-=12;y++}return key(y,m,Math.min(D(k),dim(m)))}
+function parseSms(t){t=norm(t);const T=today(),o={};
+  const a=t.match(/[:：]\s*([+\-−]?)\s*([\d,]{3,})/);if(a){o.amount=+a[2].replace(/,/g,'');o.sign=a[1]==='+'?'+':(a[1]?'-':'')}
+  const d=t.match(/(\d{2})(\d{2})-(\d{1,2}):(\d{2})/);if(d){o.date=key(T.y,+d[1],+d[2]);o.time=d[3].padStart(2,'0')+':'+d[4]}
+  const c=t.match(/حساب\s*[:：]\s*(\d+)/);if(c)o.acct=c[1];return o}
+const catOf=id=>S.cats.find(c=>c.id===id),rem=l=>l.amount-l.paid;
+let tab='home',F=null,hs='exp',ht='line',lm='person';
+const tabs=[['home','🏠','خانه'],['tx','🧾','تراکنش'],['loan','🤝','بدهی/طلب'],['inst','📅','اقساط'],['set','⚙️','تنظیمات']];
+function render(){document.getElementById('nav').innerHTML=tabs.map(([k,i,n])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()"><b>${i}</b>${n}</button>`).join('');
+  document.getElementById('app').innerHTML=({home:vHome,tx:vTx,loan:vLoan,inst:vInst,set:vSet})[tab]()}
+// charts
+function donut(items){const tot=items.reduce((s,i)=>s+i.val,0);if(!tot)return '<div class="mut">داده‌ای نیست.</div>';let off=0;const C=2*Math.PI*38;
+  const arcs=items.map((it,i)=>{const len=it.val/tot*C,s=`<circle r="38" cx="50" cy="50" fill="none" stroke="${PAL[i%8]}" stroke-width="16" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}"/>`;off+=len;return s}).join('');
+  return `<div class="row"><svg viewBox="0 0 100 100" width="150" height="150" style="transform:rotate(-90deg);flex:none">${arcs}</svg><div style="flex:1;min-width:0">${items.map((it,i)=>`<div class="leg"><i style="background:${PAL[i%8]}"></i><span style="flex:1">${esc(it.label)}</span><b>${Math.round(it.val/tot*100)}%</b></div>`).join('')}</div></div>`}
+function line(labels,series){const W=320,H=150,p=24,n=labels.length;const mx=Math.max(1,...series.flatMap(s=>s.vals));
+  const X=i=>p+(n>1?i*(W-2*p)/(n-1):0),Yy=v=>H-22-(v/mx)*(H-40);
+  const ls=series.map(s=>`<polyline fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linejoin="round" points="${s.vals.map((v,i)=>X(i)+','+Yy(v)).join(' ')}"/>`+s.vals.map((v,i)=>`<circle cx="${X(i)}" cy="${Yy(v)}" r="3" fill="${s.color}"/>`).join('')).join('');
+  const tl=labels.map((l,i)=>(n<=7||i%Math.ceil(n/6)===0||i===n-1)?`<text x="${X(i)}" y="${H-5}" font-size="9" text-anchor="middle">${l}</text>`:'').join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%"><line x1="${p}" x2="${W-p}" y1="${H-22}" y2="${H-22}" stroke="var(--line)"/><text x="${p}" y="12" font-size="9">${fmt(mx/U())}</text>${ls}${tl}</svg>`+(series.length>1?`<div class="row" style="justify-content:center">${series.map(s=>`<span class="leg"><i style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>`:'')}
+const hbar=items=>{const mx=Math.max(1,...items.map(i=>Math.abs(i.val)));return items.length?items.map(i=>`<div style="margin:8px 0"><div class="row"><span>${esc(i.label)}</span><b style="color:${i.color}">${money(i.val)}</b></div><div class="bar"><i style="width:${Math.abs(i.val)/mx*100}%;background:${i.color}"></i></div></div>`).join(''):'<div class="mut">داده‌ای نیست.</div>'};
+function lastMonths(n){const T=today();let k=key(T.y,T.m,1);const a=[];for(let i=0;i<n;i++){a.unshift(k);k=addM(k,-1)}return a}
+function upcoming(n){const T=today(),ms=[];let k=key(T.y,T.m,1);for(let i=0;i<n;i++){ms.push(k);k=addM(k,1)}const v=ms.map(()=>0);
+  S.inst.forEach(i=>{let d=i.due;for(let j=0;j<i.total-i.paid;j++){const ix=ms.findIndex(m=>Y(m)===Y(d)&&M(m)===M(d));if(ix>=0)v[ix]+=i.amount;d=addM(d,i.every||1)}});return{ms,v}}
+function homeChart(){const T=today();
+  if(hs==='exp'){const a=key(T.y,T.m,1),ex=S.tx.filter(t=>t.kind==='exp'&&t.date>=a&&t.date<=key(T.y,T.m,31));
+    if(ht==='pie'){const b={};ex.forEach(t=>b[t.cat]=(b[t.cat]||0)+t.amount);return donut(Object.entries(b).sort((x,y)=>y[1]-x[1]).map(([label,val])=>({label,val})))}
+    const n=T.d,v=Array.from({length:n},(_,i)=>ex.filter(t=>D(t.date)===i+1).reduce((s,t)=>s+t.amount,0));return line(v.map((_,i)=>i+1),[{name:'خرج',color:PAL[0],vals:v}])}
+  if(hs==='inc'){if(ht==='pie'){const a=key(T.y,T.m,1),b={};S.tx.filter(t=>t.kind==='inc'&&t.date>=a&&t.date<=key(T.y,T.m,31)).forEach(t=>b[t.cat]=(b[t.cat]||0)+t.amount);return donut(Object.entries(b).sort((x,y)=>y[1]-x[1]).map(([label,val])=>({label,val})))}
+    const ms=lastMonths(6),g=(k,m)=>S.tx.filter(t=>t.kind===k&&Y(t.date)===Y(m)&&M(t.date)===M(m)).reduce((s,t)=>s+t.amount,0);
+    return line(ms.map(m=>MN[M(m)-1]),[{name:'درآمد',color:'#15803d',vals:ms.map(m=>g('inc',m))},{name:'خرج',color:'#c0392b',vals:ms.map(m=>g('exp',m))}])}
+  if(hs==='loan'){if(ht==='pie'){const b={};S.loans.forEach(l=>b[l.person]=(b[l.person]||0)+rem(l));return donut(Object.entries(b).filter(x=>x[1]>0).map(([label,val])=>({label,val})))}
+    const ms=lastMonths(6),f=k=>S.loans.filter(l=>l.kind===k);const g=(k,m)=>f(k).filter(l=>Y(l.date)===Y(m)&&M(l.date)===M(m)).reduce((s,l)=>s+l.amount,0);
+    return line(ms.map(m=>MN[M(m)-1]),[{name:'طلب',color:'#15803d',vals:ms.map(m=>g('lend',m))},{name:'بدهی',color:'#c0392b',vals:ms.map(m=>g('borrow',m))}])}
+  if(ht==='pie')return donut(S.inst.filter(i=>i.paid<i.total).map(i=>({label:i.title,val:(i.total-i.paid)*i.amount})));
+  const u=upcoming(6);return line(u.ms.map(m=>MN[M(m)-1]),[{name:'اقساط',color:PAL[1],vals:u.v}])}
+const seg=(arr,cur,fn)=>`<div class="seg">${arr.map(([k,n])=>`<span class="chip ${cur===k?'on':''}" onclick="${fn}('${k}')">${n}</span>`).join('')}</div>`;
+function vHome(){const T=today(),a=key(T.y,T.m,1),b=key(T.y,T.m,31);
+  const ex=S.tx.filter(t=>t.kind==='exp'&&t.date>=a&&t.date<=b).reduce((s,t)=>s+t.amount,0),inc=S.tx.filter(t=>t.kind==='inc'&&t.date>=a&&t.date<=b).reduce((s,t)=>s+t.amount,0);
+  const debt=S.loans.filter(l=>l.kind==='borrow').reduce((s,l)=>s+rem(l),0),cred=S.loans.filter(l=>l.kind==='lend').reduce((s,l)=>s+rem(l),0);
+  const up=S.inst.filter(i=>i.paid<i.total).sort((x,y)=>x.due-y.due).slice(0,3);
+  return `<h2>${MN[T.m-1]} ${T.y}</h2><div class="grid"><div class="card"><div class="mut">خرج ماه</div><div class="big red">${money(ex)}</div></div><div class="card"><div class="mut">درآمد ماه</div><div class="big grn">${money(inc)}</div></div><div class="card"><div class="mut">من بدهکارم</div><div class="big red">${money(debt)}</div></div><div class="card"><div class="mut">من طلبکارم</div><div class="big grn">${money(cred)}</div></div></div>
+  <div class="card row" style="margin-top:10px"><span>مانده ماه <span class="mut">(درآمد − خرج)</span></span><b class="big ${inc-ex>=0?'grn':'red'}">${inc-ex>=0?'':'-'}${money(Math.abs(inc-ex))}</b></div><h2>نمودار</h2><div class="card">${seg([['exp','خرج'],['inc','درآمد'],['loan','بدهی/طلب'],['inst','اقساط']],hs,'setHs')}${seg([['line','خطی'],['pie','دایره‌ای']],ht,'setHt')}${homeChart()}</div>
+  <h2>اقساط نزدیک</h2>${up.length?up.map(i=>`<div class="card row"><span>${esc(i.title)}<div class="mut">سررسید ${dstr(i.due)}</div></span><b class="amb">${money(i.amount)}</b></div>`).join(''):'<div class="card mut">قسطی ثبت نشده.</div>'}`}
+const setHs=k=>{hs=k;render()},setHt=k=>{ht=k;render()};
+function vTx(){if(!S.tx.length)return '<h2>تراکنش‌ها</h2><div class="card mut">خالیه.</div>';
+  const g={};[...S.tx].sort((x,y)=>y.date-x.date||(y.time||'').localeCompare(x.time||'')).forEach(t=>(g[t.date]=g[t.date]||[]).push(t));
+  return Object.entries(g).sort((x,y)=>y[0]-x[0]).map(([d,l])=>{const tot=l.filter(t=>t.kind==='exp').reduce((s,t)=>s+t.amount,0);
+  return `<h2>${dstr(+d)} ${tot?`<span class="mut">· جمع خرج ${money(tot)}</span>`:''}</h2>`+l.map(t=>{const neg=t.kind==='exp'||t.kind==='lend',c=catOf(t.catId),k=S.cards.find(x=>x.id===t.card);
+  return `<div class="card row"><div class="l"><div class="ic">${c?c.icon:'•'}</div><div style="min-width:0"><b>${esc(t.cat)}</b>${t.person?` · ${esc(t.person)}`:''}<div class="mut">${t.time||''} ${k?'· '+esc(k.name):''} ${t.total?`· کل ${money(t.total)}`:''} ${esc(t.note||'')}</div></div></div><div class="row"><b class="${neg?'red':'grn'}">${neg?'-':'+'}${fmt(t.amount/U())}</b><button class="x" onclick="delTx('${t.id}')">×</button></div></div>`}).join('')}).join('')}
+function loanCard(x){const k=x.kind;return `<div class="card"><div class="row"><b>${esc(x.person)} <span class="mut">${k==='lend'?'طلب':'بدهی'}</span></b><span class="${k==='lend'?'grn':'red'}">${money(rem(x))}</span></div><div class="mut">از ${money(x.amount)} · ${k==='lend'?'وصول':'پرداخت'} شده ${money(x.paid)} · ${dstr(x.date)} ${esc(x.note||'')}</div><div class="bar"><i style="width:${x.paid/x.amount*100}%"></i></div>
+  ${rem(x)>0?`<div class="row" style="margin-top:10px"><input id="p${x.id}" inputmode="decimal" placeholder="مبلغ ${k==='lend'?'وصول‌شده':'پرداخت‌شده'}" style="margin:0"><button class="g" onclick="pay('${x.id}')">ثبت</button></div>`:'<div class="grn mut">تسویه شد ✓</div>'}<button class="x" onclick="delLoan('${x.id}')" style="font-size:13px">حذف</button></div>`}
+function vLoan(){const net={};S.loans.forEach(l=>net[l.person]=(net[l.person]||0)+(l.kind==='lend'?1:-1)*rem(l));
+  const items=Object.entries(net).filter(x=>Math.abs(x[1])>0).map(([label,val])=>({label,val,color:val>=0?'#15803d':'#c0392b'}));
+  let body;if(lm==='person'){const ps=[...new Set(S.loans.map(l=>l.person))];body=ps.length?ps.map(p=>`<h2>👤 ${esc(p)} <span class="${net[p]>=0?'grn':'red'}">${net[p]>=0?'طلبکارم':'بدهکارم'} ${money(Math.abs(net[p]))}</span></h2>`+S.loans.filter(l=>l.person===p).map(loanCard).join('')).join(''):'<div class="card mut">چیزی ثبت نشده.</div>'}
+  else body=['lend','borrow'].map(k=>`<h2>${k==='lend'?'طلب‌ها':'بدهی‌ها'}</h2>`+(S.loans.filter(l=>l.kind===k).map(loanCard).join('')||'<div class="card mut">چیزی ثبت نشده.</div>')).join('');
+  return `<h2>مانده هر نفر <span class="mut">(سبز: طلب، قرمز: بدهی)</span></h2><div class="card">${hbar(items)}</div>${seg([['person','بر اساس شخص'],['type','بر اساس نوع']],lm,'setLm')}${body}<div class="mut">ثبت جدید: دکمهٔ + و دستهٔ «قرض دادم/گرفتم».</div>`}
+const setLm=k=>{lm=k;render()};
+function ring(p,t){const C=2*Math.PI*17,len=C*p/t;return `<svg viewBox="0 0 44 44" width="58" height="58" style="flex:none"><circle cx="22" cy="22" r="17" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="22" cy="22" r="17" fill="none" stroke="var(--acc)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${len} ${C}" transform="rotate(-90 22 22)"/><text x="22" y="26" font-size="11" text-anchor="middle" style="fill:var(--tx)">${p}/${t}</text></svg>`}
+const EV={1:'ماهانه',2:'هر ۲ ماه',3:'هر ۳ ماه',6:'هر ۶ ماه',12:'سالانه'};
+function vInst(){const act=S.inst.filter(i=>i.paid<i.total),u=upcoming(6);
+  return `<h2>باقی‌ماندهٔ هر وام</h2><div class="card">${hbar(act.map((i,n)=>({label:i.title,val:(i.total-i.paid)*i.amount,color:PAL[n%8]})))}</div>
+  <h2>اقساط ۶ ماه آینده</h2><div class="card">${line(u.ms.map(m=>MN[M(m)-1]),[{name:'اقساط',color:PAL[1],vals:u.v}])}</div><h2>اقساط</h2>`+
+  (S.inst.length?S.inst.map(i=>{const left=i.total-i.paid;return `<div class="card"><div class="row"><div class="l">${ring(i.paid,i.total)}<div><b>${esc(i.title)}</b><div class="mut">${money(i.amount)} · ${EV[i.every||1]}</div></div></div></div><div class="mut" style="margin-top:6px">${left>0?`سررسید بعدی: ${dstr(i.due)} · ${left} قسط مانده · جمع مانده ${money(left*i.amount)}`:'تمام شد ✓'}</div>
+  <div class="row" style="margin-top:10px">${left>0?`<button class="p" onclick="payInst('${i.id}')">پرداخت شد</button>`:'<span></span>'}<button class="x" style="font-size:13px" onclick="delInst('${i.id}')">حذف</button></div></div>`}).join(''):'<div class="card mut">قسطی ثبت نشده.</div>')+
+  `<h2>قسط / وام جدید</h2><div class="card"><input id="iT" placeholder="عنوان (مثلا وام ماشین)"><input id="iA" inputmode="decimal" placeholder="مبلغ هر قسط (${S.unit})"><input id="iN" inputmode="numeric" placeholder="تعداد کل اقساط"><input id="iP" inputmode="numeric" placeholder="چندتا پرداخت شده؟ (اختیاری)"><select id="iE">${Object.entries(EV).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><input id="iD" placeholder="سررسید بعدی" value="${fdate(tdKey())}"><button class="p" onclick="addInst()">افزودن</button></div>`}
+function vSet(){return `<h2>واحد پول</h2><div class="card"><select onchange="S.unit=this.value;save();render()"><option ${S.unit==='ریال'?'selected':''}>ریال</option><option ${S.unit==='تومان'?'selected':''}>تومان</option></select><div class="mut">همه‌چیز داخلی به ریال ذخیره می‌شود و با تغییر واحد خودکار تبدیل می‌شود. هر عددی هم فارسی هم انگلیسی بنویسی قبول است.</div></div>
+  <h2>کارت‌ها</h2>`+S.cards.map(c=>`<div class="card row"><span>💳 ${esc(c.name)} <span class="mut">${esc(c.acct||'')}</span></span><button class="x" onclick="delCard('${c.id}')">×</button></div>`).join('')+`<div class="card"><input id="kN" placeholder="نام کارت (مثلا ملت)"><input id="kA" inputmode="numeric" placeholder="شمارهٔ حساب در پیامک (اختیاری، برای تشخیص خودکار)"><button class="p" onclick="addCard()">افزودن کارت</button></div>
+  <h2>دسته‌ها</h2>`+S.cats.map(c=>`<div class="card row"><div class="l"><div class="ic">${c.icon}</div><span>${esc(c.name)}<div class="mut">${TYPES[c.type]}</div></span></div><button class="x" onclick="delCat('${c.id}')">×</button></div>`).join('')+
+  `<div class="card"><input id="cN" placeholder="نام دستهٔ جدید"><select id="cT">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><div class="mut">آیکون:</div><div class="ig">${ICONS.map((i,n)=>`<span id="ci${n}" class="${n===cIc?'on':''}" onclick="pickIc(${n})">${i}</span>`).join('')}</div><button class="p" onclick="addCat()">افزودن دسته</button></div>
+  <h2>پشتیبان‌گیری</h2><div class="card"><button class="g" onclick="exp()">نمایش پشتیبان</button> <button class="g" onclick="imp()">بازیابی</button><textarea id="bk" rows="4" placeholder="متن پشتیبان اینجا میاد. برای بازیابی، متن را بچسبان و «بازیابی» بزن."></textarea><div class="mut">متن را در Notes ذخیره کن، هفته‌ای یک بار.</div></div>`}
+let cIc=0;const pickIc=n=>{document.querySelectorAll('.ig span').forEach((s,i)=>s.classList.toggle('on',i===n));cIc=n};
+// add sheet
+const NAMES=()=>F.names.split(/[,،]/).map(s=>s.trim()).filter(Boolean);
+const totalR=()=>num(F.amount)*U();
+function shareR(){if(F.share!=='')return num(F.share)*U();const n=F.n==='all'?NAMES().length+1:F.n;return totalR()/n}
+function openAdd(sms){F={sms:sms||'',amount:'',date:fdate(tdKey()),time:'',note:'',cat:null,person:'',card:S.cards[0].id,dong:false,n:2,names:'',share:''};if(sms)applySms(sms);drawSheet();document.getElementById('sheet').style.display='block'}
+function applySms(v){const p=parseSms(v);F.sms=v;if(p.amount)F.amount=String(p.amount/U());if(p.date)F.date=fdate(p.date);if(p.time)F.time=p.time;
+  if(p.sign==='+'&&!F.cat){const c=S.cats.find(c=>c.type==='inc');if(c)F.cat=c.id}
+  if(p.acct){const k=S.cards.find(c=>c.acct&&(p.acct.endsWith(c.acct)||c.acct.endsWith(p.acct)));if(k)F.card=k.id}}
+function fromSms(v){applySms(v);document.getElementById('fA').value=F.amount;document.getElementById('fD').value=F.date;upd()}
+function upd(){const el=document.getElementById('sum');if(!el||!F.dong)return;const k=NAMES().length,s=shareR();el.innerHTML=k?`هر نفر ${money(s)} · سهم من ${money(totalR()-s*k)}`:'اسم نفرها را بنویس.'}
+function drawSheet(){const c=catOf(F.cat),loan=c&&(c.type==='lend'||c.type==='borrow'),isExp=c&&c.type==='exp';
+  document.getElementById('sheetIn').innerHTML=`<div class="row"><b>ثبت تراکنش</b><button class="x" onclick="closeSheet()">×</button></div>
+  <textarea rows="3" placeholder="متن پیامک بانک را اینجا بچسبان (اختیاری)" oninput="fromSms(this.value)">${esc(F.sms)}</textarea>
+  <input id="fA" inputmode="decimal" placeholder="مبلغ (${S.unit})" value="${esc(F.amount)}" oninput="F.amount=this.value;upd()">
+  <input id="fD" placeholder="تاریخ شمسی 1405/07/25" value="${esc(F.date)}" oninput="F.date=this.value">
+  <div class="mut">از کدام کارت؟</div><div class="chips">${S.cards.map(k=>`<span class="chip ${k.id===F.card?'on':''}" onclick="F.card='${k.id}';drawSheet()">💳 ${esc(k.name)}</span>`).join('')}</div>
+  <div class="mut">این برای چیه؟</div><div class="chips">${S.cats.map(x=>`<span class="chip ${x.id===F.cat?'on':''}" onclick="F.cat='${x.id}';drawSheet()">${x.icon} ${esc(x.name)}</span>`).join('')}</div>
+  ${loan?`<input placeholder="${c.type==='lend'?'به چه کسی قرض دادی؟':'از چه کسی قرض گرفتی؟'}" value="${esc(F.person)}" oninput="F.person=this.value">`:''}
+  ${isExp?`<label class="sw"><input type="checkbox" ${F.dong?'checked':''} onchange="F.dong=this.checked;drawSheet()">دنگ است؟ (بقیه سهمشان را بدهکارند)</label>`:''}
+  ${isExp&&F.dong?`<input placeholder="اسم نفرها، با کاما جدا کن: علی، رضا" value="${esc(F.names)}" oninput="F.names=this.value;upd()"><div class="chips">${[2,3,4,5,'all'].map(n=>`<span class="chip ${F.n===n&&F.share===''?'on':''}" onclick="F.n=${n==='all'?"'all'":n};F.share='';drawSheet()">${n==='all'?'مساوی بین همه':'÷ '+n}</span>`).join('')}</div><input inputmode="decimal" placeholder="یا سهم هر نفر را دستی بنویس (${S.unit})" value="${esc(F.share)}" oninput="F.share=this.value;upd()"><div id="sum" class="mut" style="margin-bottom:8px"></div>`:''}
+  <input placeholder="توضیح (اختیاری)" value="${esc(F.note)}" oninput="F.note=this.value">
+  <button class="p" style="width:100%" onclick="saveTx()">ذخیره</button>`;upd()}
+function closeSheet(){document.getElementById('sheet').style.display='none';F=null}
+function saveTx(){const total=totalR(),date=pdate(F.date),c=catOf(F.cat);
+  if(!total||!date||!c){alert('مبلغ، تاریخ و دسته را کامل کن.');return}
+  const isLoan=c.type==='lend'||c.type==='borrow';if(isLoan&&!F.person.trim()){alert('اسم طرف حساب را بنویس.');return}
+  const names=NAMES(),dong=c.type==='exp'&&F.dong&&names.length;let mine=total,share=0;
+  if(dong){share=shareR();mine=total-share*names.length;if(mine<0){alert('جمع سهم‌ها از کل مبلغ بیشتر است.');return}}
+  S.tx.push({id:uid(),amount:mine,total:dong?total:undefined,date,time:F.time,note:F.note,catId:c.id,cat:c.name,kind:c.type,person:isLoan?F.person.trim():'',card:F.card});
+  if(isLoan)S.loans.push({id:uid(),person:F.person.trim(),kind:c.type,amount:total,paid:0,date,note:F.note});
+  if(dong)names.forEach(n=>S.loans.push({id:uid(),person:n,kind:'lend',amount:share,paid:0,date,note:'دنگ '+(F.note||c.name)}));
+  save();closeSheet();tab='tx';render()}
+const ask=(m,f)=>{if(confirm(m)){f();save();render()}};
+const delTx=id=>ask('حذف شود؟',()=>S.tx=S.tx.filter(t=>t.id!==id)),delLoan=id=>ask('حذف شود؟',()=>S.loans=S.loans.filter(t=>t.id!==id)),delInst=id=>ask('حذف شود؟',()=>S.inst=S.inst.filter(t=>t.id!==id));
+const delCat=id=>ask('دسته حذف شود؟',()=>S.cats=S.cats.filter(c=>c.id!==id)),delCard=id=>ask('کارت حذف شود؟',()=>{if(S.cards.length>1)S.cards=S.cards.filter(c=>c.id!==id)});
+function pay(id){const l=S.loans.find(x=>x.id===id),v=num(document.getElementById('p'+id).value)*U();if(!v)return;l.paid=Math.min(l.amount,l.paid+v);save();render()}
+function addInst(){const g=i=>document.getElementById(i).value,amount=num(g('iA'))*U(),total=num(g('iN')),paid=num(g('iP')),due=pdate(g('iD'));
+  if(!g('iT')||!amount||!total||!due){alert('عنوان، مبلغ، تعداد و سررسید لازم است.');return}
+  S.inst.push({id:uid(),title:g('iT'),amount,total,paid,due,every:+g('iE')});save();render()}
+function payInst(id){const i=S.inst.find(x=>x.id===id);i.paid++;i.due=addM(i.due,i.every||1);
+  if(confirm('به‌عنوان خرج هم ثبت شود؟')){const c=S.cats.find(c=>c.name==='قسط')||S.cats.find(c=>c.type==='exp');if(c)S.tx.push({id:uid(),amount:i.amount,date:tdKey(),time:'',note:i.title,catId:c.id,cat:c.name,kind:'exp',person:'',card:S.cards[0].id})}save();render()}
+function addCat(){const n=document.getElementById('cN').value.trim();if(!n)return;S.cats.push({id:uid(),name:n,type:document.getElementById('cT').value,icon:ICONS[cIc]});save();render()}
+function addCard(){const n=document.getElementById('kN').value.trim();if(!n)return;S.cards.push({id:uid(),name:n,acct:norm(document.getElementById('kA').value).trim()});save();render()}
+function exp(){document.getElementById('bk').value=JSON.stringify(S)}
+function imp(){try{const o=JSON.parse(document.getElementById('bk').value);if(!o.cats||!o.tx)throw 0;if(confirm('اطلاعات فعلی جایگزین شود؟')){S=o;save();location.reload()}}catch(e){alert('متن پشتیبان معتبر نیست.')}}
+render();
+try{const h=decodeURIComponent((location.hash||'').replace(/^#/,'')),q=new URLSearchParams(location.search).get('sms'),m=h.match(/^sms=([\s\S]*)/),s=m?m[1]:q;if(s)openAdd(s)}catch(e){}
+</script>
+</body>
+</html>
