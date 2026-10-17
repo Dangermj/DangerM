@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>حسابدار من</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mut:#77756e;--line:#e4e2db;--acc:#0f766e;--red:#b42318;--grn:#15803d;--amb:#b45309;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141413;--card:#201f1d;--tx:#f0eee8;--mut:#9c9a92;--line:#33322f;--acc:#2dd4bf;--red:#f87171;--grn:#4ade80;--amb:#fbbf24;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141413;--card:#201f1d;--tx:#f0eee8;--mut:#9c9a92;--line:#33322f;--acc:#2dd4bf;--red:#f87171;--grn:#4ade80;--amb:#fbbf24;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 Tahoma,"Vazirmatn",system-ui,sans-serif;padding-bottom:84px}
+main{max-width:560px;margin:auto;padding:14px}
+h2{font-size:15px;margin:18px 0 8px;color:var(--mut);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.big{font-size:19px;font-weight:700}.mut{color:var(--mut);font-size:13px}
+.red{color:var(--red)}.grn{color:var(--grn)}.amb{color:var(--amb)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:11px 2px;font:inherit;font-size:12px}
+nav button.on{color:var(--acc);font-weight:700}
+button.p{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) button.p,:root:not([data-theme="light"]) .chip.on{color:#0b1f1c}}
+button.g{background:none;border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:7px 11px;font:inherit}
+button.x{background:none;border:0;color:var(--mut);font-size:18px}
+input,select,textarea{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;margin:3px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{border:1px solid var(--line);border-radius:20px;padding:5px 12px;background:var(--bg);font-size:14px}
+.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+#sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;overflow:auto}
+#sheet>div{background:var(--bg);max-width:560px;margin:30px auto 60px;border-radius:16px;padding:14px}
+.fab{position:fixed;left:16px;bottom:calc(70px + env(safe-area-inset-bottom,0px));width:54px;height:54px;border-radius:50%;font-size:28px;z-index:10;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--acc)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<button class="p fab" onclick="openAdd()">+</button>
+<div id="sheet"><div id="sheetIn"></div></div>
+<nav id="nav"></nav>
+<script>
+const MN=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const TYPES={exp:'خرج',inc:'درآمد',lend:'طلب (قرض دادم)',borrow:'بدهی (قرض گرفتم)'};
+const KEY='hesab_v1';
+let S={cats:[{id:'c1',name:'خوراک',type:'exp'},{id:'c2',name:'حمل‌ونقل',type:'exp'},{id:'c3',name:'قبوض',type:'exp'},{id:'c4',name:'خرید',type:'exp'},{id:'c5',name:'قسط',type:'exp'},{id:'c6',name:'حقوق',type:'inc'},{id:'c7',name:'قرض دادم',type:'lend'},{id:'c8',name:'قرض گرفتم',type:'borrow'}],tx:[],loans:[],inst:[],unit:'ریال'};
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fa=n=>Math.round(n).toLocaleString('fa-IR');
+const norm=s=>String(s).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/[٬،]/g,',');
+const num=s=>+norm(s).replace(/,/g,'');
+function today(){const p=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date()),g=t=>+p.find(x=>x.type===t).value;return{y:g('year'),m:g('month'),d:g('day')}}
+const key=(y,m,d)=>y*10000+m*100+d;
+const dstr=k=>{const y=Math.floor(k/10000),m=Math.floor(k/100)%100,d=k%100;return `${d.toLocaleString('fa-IR')} ${MN[m-1]} ${y.toLocaleString('fa-IR',{useGrouping:false})}`};
+function pdate(s){const m=norm(s).match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);return m?key(+m[1],+m[2],+m[3]):null}
+const fdate=k=>{const y=Math.floor(k/10000),m=Math.floor(k/100)%100,d=k%100;return `${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}`};
+const tdKey=()=>{const T=today();return key(T.y,T.m,T.d)};
+const dim=m=>m<=6?31:m<=11?30:29;
+function nextMonth(k){let y=Math.floor(k/10000),m=Math.floor(k/100)%100,d=k%100;m++;if(m>12){m=1;y++}return key(y,m,Math.min(d,dim(m)))}
+function parseSms(t){
+  t=norm(t);const T=today();const o={};
+  const a=t.match(/[:：]\s*([+\-−]?)\s*([\d,]{3,})/);
+  if(a){o.amount=+a[2].replace(/,/g,'');o.sign=a[1]==='+'?'+':(a[1]?'-':'')}
+  const d=t.match(/(\d{2})(\d{2})-(\d{1,2}):(\d{2})/);
+  if(d){o.date=key(T.y,+d[1],+d[2]);o.time=d[3].padStart(2,'0')+':'+d[4]}
+  return o}
+let tab='home',form=null;
+const tabs=[['home','خانه'],['tx','تراکنش‌ها'],['loan','بدهی/طلب'],['inst','اقساط'],['set','تنظیمات']];
+const rem=l=>l.amount-l.paid;
+function render(){
+  document.getElementById('nav').innerHTML=tabs.map(([k,n])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()">${n}</button>`).join('');
+  document.getElementById('app').innerHTML=({home:vHome,tx:vTx,loan:vLoan,inst:vInst,set:vSet})[tab]()}
+function vHome(){
+  const T=today(),a=key(T.y,T.m,1),b=key(T.y,T.m,31);
+  const ex=S.tx.filter(t=>t.kind==='exp'&&t.date>=a&&t.date<=b),inc=S.tx.filter(t=>t.kind==='inc'&&t.date>=a&&t.date<=b);
+  const se=ex.reduce((s,t)=>s+t.amount,0),si=inc.reduce((s,t)=>s+t.amount,0);
+  const debt=S.loans.filter(l=>l.kind==='borrow').reduce((s,l)=>s+rem(l),0),cred=S.loans.filter(l=>l.kind==='lend').reduce((s,l)=>s+rem(l),0);
+  const byC={};ex.forEach(t=>byC[t.cat]=(byC[t.cat]||0)+t.amount);
+  const cats=Object.entries(byC).sort((x,y)=>y[1]-x[1]);
+  const up=S.inst.filter(i=>i.paid<i.total).sort((x,y)=>x.due-y.due).slice(0,3);
+  const instLeft=S.inst.reduce((s,i)=>s+Math.max(0,i.total-i.paid)*i.amount,0);
+  return `<h2>${MN[T.m-1]} ${T.y.toLocaleString('fa-IR',{useGrouping:false})}</h2><div class="grid"><div class="card"><div class="mut">خرج</div><div class="big red">${fa(se)}</div><div class="mut">${S.unit}</div></div><div class="card"><div class="mut">درآمد</div><div class="big grn">${fa(si)}</div><div class="mut">${S.unit}</div></div>
+  <div class="card"><div class="mut">من بدهکارم</div><div class="big red">${fa(debt)}</div></div><div class="card"><div class="mut">من طلبکارم</div><div class="big grn">${fa(cred)}</div></div></div>
+  <h2>خرج بر اساس دسته</h2>${cats.length?cats.map(([n,v])=>`<div class="card"><div class="row"><span>${esc(n)}</span><b>${fa(v)}</b></div><div class="bar"><i style="width:${v/se*100}%"></i></div></div>`).join(''):'<div class="card mut">هنوز خرجی ثبت نشده. دکمهٔ + را بزن.</div>'}
+  <h2>اقساط نزدیک</h2>${up.length?up.map(i=>`<div class="card row"><span>${esc(i.title)}<div class="mut">سررسید ${dstr(i.due)}</div></span><b class="amb">${fa(i.amount)}</b></div>`).join('')+`<div class="mut">جمع باقی‌ماندهٔ اقساط: ${fa(instLeft)} ${S.unit}</div>`:'<div class="card mut">قسطی ثبت نشده.</div>'}`}
+function vTx(){
+  if(!S.tx.length)return '<h2>تراکنش‌ها</h2><div class="card mut">خالیه.</div>';
+  const g={};[...S.tx].sort((x,y)=>y.date-x.date||(y.time||'').localeCompare(x.time||'')).forEach(t=>(g[t.date]=g[t.date]||[]).push(t));
+  return Object.entries(g).sort((x,y)=>y[0]-x[0]).map(([d,l])=>{const tot=l.filter(t=>t.kind==='exp').reduce((s,t)=>s+t.amount,0);
+  return `<h2>${dstr(+d)} ${tot?`· جمع خرج ${fa(tot)}`:''}</h2>`+l.map(t=>{const neg=t.kind==='exp'||t.kind==='lend';
+  return `<div class="card row"><div><b>${esc(t.cat)}</b>${t.person?` · ${esc(t.person)}`:''}<div class="mut">${t.time||''} ${esc(t.note||'')}</div></div><div class="row"><b class="${neg?'red':'grn'}">${neg?'-':'+'}${fa(t.amount)}</b><button class="x" onclick="delTx('${t.id}')">×</button></div></div>`}).join('')}).join('')}
+function vLoan(){
+  const f=k=>{const l=S.loans.filter(x=>x.kind===k);return l.length?l.map(x=>`<div class="card"><div class="row"><b>${esc(x.person)}</b><span class="${k==='lend'?'grn':'red'}">${fa(rem(x))} ${S.unit}</span></div><div class="mut">از ${fa(x.amount)} · ${k==='lend'?'وصول':'پرداخت'} شده ${fa(x.paid)} · ${dstr(x.date)} ${esc(x.note||'')}</div><div class="bar"><i style="width:${x.paid/x.amount*100}%"></i></div>
+  ${rem(x)>0?`<div class="row" style="margin-top:8px"><input id="p${x.id}" inputmode="numeric" placeholder="مبلغ ${k==='lend'?'وصول‌شده':'پرداخت‌شده'}" style="margin:0"><button class="g" onclick="pay('${x.id}')">ثبت</button></div>`:'<div class="grn mut">تسویه شد ✓</div>'}<button class="x" onclick="delLoan('${x.id}')" style="font-size:13px">حذف</button></div>`).join(''):'<div class="card mut">چیزی ثبت نشده.</div>'};
+  return `<h2>طلب‌ها (کسایی که به من بدهکارن)</h2>${f('lend')}<h2>بدهی‌ها (به کی بدهکارم)</h2>${f('borrow')}<div class="mut">برای ثبت جدید، دکمهٔ + را بزن و دستهٔ «قرض دادم/گرفتم» را انتخاب کن.</div>`}
+function vInst(){
+  return `<h2>اقساط</h2>`+(S.inst.length?S.inst.map(i=>{const left=i.total-i.paid;return `<div class="card"><div class="row"><b>${esc(i.title)}</b><span>${fa(i.amount)} ${S.unit}</span></div><div class="mut">${left>0?`سررسید بعدی: ${dstr(i.due)} · ${fa(left)} قسط مانده · جمع مانده ${fa(left*i.amount)}`:'تمام شد ✓'}</div><div class="bar"><i style="width:${i.paid/i.total*100}%"></i></div>
+  <div class="row" style="margin-top:8px">${left>0?`<button class="p" onclick="payInst('${i.id}')">پرداخت شد</button>`:'<span></span>'}<button class="x" style="font-size:13px" onclick="delInst('${i.id}')">حذف</button></div></div>`}).join(''):'<div class="card mut">قسطی ثبت نشده.</div>')+
+  `<h2>قسط جدید</h2><div class="card"><input id="iT" placeholder="عنوان (مثلا وام ماشین)"><input id="iA" inputmode="numeric" placeholder="مبلغ هر قسط"><input id="iN" inputmode="numeric" placeholder="تعداد کل اقساط"><input id="iP" inputmode="numeric" placeholder="چندتا پرداخت شده؟ (اختیاری)"><input id="iD" placeholder="سررسید بعدی" value="${fdate(tdKey())}"><button class="p" onclick="addInst()">افزودن</button></div>`}
+function vSet(){
+  return `<h2>دسته‌ها</h2>`+S.cats.map(c=>`<div class="card row"><span>${esc(c.name)} <span class="mut">· ${TYPES[c.type]}</span></span><button class="x" onclick="delCat('${c.id}')">×</button></div>`).join('')+
+  `<div class="card"><input id="cN" placeholder="نام دستهٔ جدید"><select id="cT">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><button class="p" onclick="addCat()">افزودن دسته</button></div>
+  <h2>واحد پول</h2><div class="card"><select onchange="S.unit=this.value;save();render()"><option ${S.unit==='ریال'?'selected':''}>ریال</option><option ${S.unit==='تومان'?'selected':''}>تومان</option></select><div class="mut">فقط برچسب است؛ مبلغ پیامک همان‌طور که هست ثبت می‌شود.</div></div>
+  <h2>پشتیبان‌گیری</h2><div class="card"><button class="g" onclick="exp()">نمایش پشتیبان</button> <button class="g" onclick="imp()">بازیابی</button><textarea id="bk" rows="5" placeholder="متن پشتیبان اینجا میاد. برای بازیابی، متن را اینجا بچسبان و «بازیابی» بزن."></textarea><div class="mut">متن را کپی و در Notes ذخیره کن. هفته‌ای یک بار.</div></div>`}
+function openAdd(sms){
+  form={sms:sms||'',amount:'',date:fdate(tdKey()),time:'',note:'',cat:null,person:''};
+  if(sms){const p=parseSms(sms);if(p.amount)form.amount=p.amount;if(p.date)form.date=fdate(p.date);if(p.time)form.time=p.time}
+  drawSheet();document.getElementById('sheet').style.display='block'}
+function drawSheet(){
+  const c=S.cats.find(x=>x.id===form.cat);const loan=c&&(c.type==='lend'||c.type==='borrow');
+  document.getElementById('sheetIn').innerHTML=`<div class="row"><b>ثبت تراکنش</b><button class="x" onclick="closeSheet()">×</button></div>
+  <textarea id="fS" rows="3" placeholder="متن پیامک بانک را اینجا بچسبان (اختیاری)" oninput="fromSms(this.value)">${esc(form.sms)}</textarea>
+  <input id="fA" inputmode="numeric" placeholder="مبلغ" value="${esc(form.amount)}" oninput="form.amount=this.value">
+  <input id="fD" placeholder="تاریخ شمسی 1405/07/25" value="${esc(form.date)}" oninput="form.date=this.value">
+  <div class="mut">این برای چیه؟</div><div class="chips">${S.cats.map(x=>`<span class="chip ${x.id===form.cat?'on':''}" onclick="form.cat='${x.id}';drawSheet()">${esc(x.name)}</span>`).join('')}</div>
+  ${loan?`<input placeholder="${c.type==='lend'?'به چه کسی قرض دادی؟':'از چه کسی قرض گرفتی؟'}" value="${esc(form.person)}" oninput="form.person=this.value">`:''}
+  <input placeholder="توضیح (اختیاری)" value="${esc(form.note)}" oninput="form.note=this.value">
+  <button class="p" style="width:100%" onclick="saveTx()">ذخیره</button>`}
+function fromSms(v){const p=parseSms(v);form.sms=v;if(p.amount){form.amount=p.amount;document.getElementById('fA').value=p.amount}if(p.date){form.date=fdate(p.date);document.getElementById('fD').value=form.date}if(p.time)form.time=p.time}
+function closeSheet(){document.getElementById('sheet').style.display='none';form=null}
+function saveTx(){
+  const amount=num(form.amount),date=pdate(form.date),c=S.cats.find(x=>x.id===form.cat);
+  if(!amount||!date||!c){alert('مبلغ، تاریخ و دسته را کامل کن.');return}
+  if((c.type==='lend'||c.type==='borrow')&&!form.person.trim()){alert('اسم طرف حساب را بنویس.');return}
+  const t={id:uid(),amount,date,time:form.time,note:form.note,catId:c.id,cat:c.name,kind:c.type,person:form.person.trim()};
+  S.tx.push(t);
+  if(c.type==='lend'||c.type==='borrow')S.loans.push({id:uid(),person:t.person,kind:c.type,amount,paid:0,date,note:form.note});
+  save();closeSheet();tab='tx';render()}
+const delTx=id=>{if(confirm('حذف شود؟')){S.tx=S.tx.filter(t=>t.id!==id);save();render()}};
+const delLoan=id=>{if(confirm('حذف شود؟')){S.loans=S.loans.filter(t=>t.id!==id);save();render()}};
+const delInst=id=>{if(confirm('حذف شود؟')){S.inst=S.inst.filter(t=>t.id!==id);save();render()}};
+const delCat=id=>{if(confirm('دسته حذف شود؟ (تراکنش‌های قبلی می‌مانند)')){S.cats=S.cats.filter(c=>c.id!==id);save();render()}};
+function pay(id){const l=S.loans.find(x=>x.id===id),v=num(document.getElementById('p'+id).value);if(!v)return;l.paid=Math.min(l.amount,l.paid+v);save();render()}
+function addInst(){const g=i=>document.getElementById(i).value;const amount=num(g('iA')),total=num(g('iN')),paid=num(g('iP')||'0'),due=pdate(g('iD'));
+  if(!g('iT')||!amount||!total||!due){alert('عنوان، مبلغ، تعداد و سررسید لازم است.');return}
+  S.inst.push({id:uid(),title:g('iT'),amount,total,paid,due});save();render()}
+function payInst(id){const i=S.inst.find(x=>x.id===id);i.paid++;i.due=nextMonth(i.due);
+  if(confirm('به‌عنوان خرج هم ثبت شود؟')){const c=S.cats.find(c=>c.name==='قسط')||S.cats.find(c=>c.type==='exp');if(c)S.tx.push({id:uid(),amount:i.amount,date:tdKey(),time:'',note:i.title,catId:c.id,cat:c.name,kind:'exp',person:''})}
+  save();render()}
+function addCat(){const n=document.getElementById('cN').value.trim();if(!n)return;S.cats.push({id:uid(),name:n,type:document.getElementById('cT').value});save();render()}
+function exp(){document.getElementById('bk').value=JSON.stringify(S)}
+function imp(){try{const o=JSON.parse(document.getElementById('bk').value);if(!o.cats||!o.tx)throw 0;if(confirm('اطلاعات فعلی با پشتیبان جایگزین شود؟')){S=o;save();render()}}catch(e){alert('متن پشتیبان معتبر نیست.')}}
+render();
+try{const h=decodeURIComponent((location.hash||'').replace(/^#/,'')),q=new URLSearchParams(location.search).get('sms'),m=h.match(/^sms=([\s\S]*)/),s=m?m[1]:q;if(s)openAdd(s)}catch(e){}
+</script>
+</body>
+</html>
